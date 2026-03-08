@@ -29,6 +29,8 @@ export interface ScanOptions {
   readonly useCache?: boolean;
   readonly cachePath?: string;
   readonly cacheTTL?: number; // Time-to-live for cache entries in milliseconds
+  /** Package names to ignore during scanning */
+  readonly ignore?: ReadonlyArray<string>;
 }
 
 /** Specific dependency fields to scan in package.json */

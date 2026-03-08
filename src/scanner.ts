@@ -184,6 +184,14 @@ export async function scanDependencies(options: ScanOptions & { packageJsonPath?
   ].filter((f): f is keyof PackageJson => pkg[f as keyof PackageJson] !== undefined);
   
   const packageNames = getDependenciesFromPackageJson(pkg, dependencyFields);
+  
+  // Filter out ignored packages
+  if (options.ignore) {
+    for (const name of options.ignore) {
+      packageNames.delete(name);
+    }
+  }
+  
   const queue = new PromiseQueue(options.concurrency ?? maxConcurrentFetches);
   const results = new Map<string, DependencyInfo>();
   
@@ -206,18 +214,21 @@ export async function scanDependencies(options: ScanOptions & { packageJsonPath?
         )
       );
       
-      const isAbandoned = meta.ageInDays >= (options.abandonmentThreshold ?? DEFAULT_ABANDONMENT_THRESHOLD);
-
+      const threshold = options.abandonmentThreshold ?? DEFAULT_ABANDONMENT_THRESHOLD;
+      const isAbandoned = meta.ageInDays >= threshold;
+      
       results.set(name, {
-        ...meta,
-        currentVersion: versionSpec, // Use the version from package.json
+        name,
+        currentVersion: versionSpec.replace(/^[\^~]/, ''),
+        publishedDate: meta.publishedDate,
+        ageInDays: meta.ageInDays,
         isAbandoned,
+        alternatives: meta.alternatives
       });
     } catch (error) {
-      console.error(`Error scanning ${name}: ${error instanceof Error ? error.message : String(error)}`);
-      // Optionally, you could add a partial result indicating an error
+      console.warn(`Failed to analyze ${name}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }));
-
-  return Object.fromEntries(results);
+  
+  return Object.fromEntries(results) as ScanResult;
 }

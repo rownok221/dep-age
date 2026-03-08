@@ -1,6 +1,6 @@
 {
   "name": "@adametherzlab/dep-age",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "Detect abandoned npm dependencies — health scores, CLI, GitHub Action, zero deps",
   "type": "module",
   "main": "./dist/index.js",

@@ -20,6 +20,37 @@ export interface DependencyInfo {
   readonly alternatives?: ReadonlyArray<string>;
 }
 
+/** A node in the dependency tree with transitive dependency info. */
+export interface TreeNode {
+  readonly name: string;
+  readonly version: string;
+  readonly ageInDays: number;
+  readonly isAbandoned: boolean;
+  readonly depth: number;
+  readonly children: ReadonlyArray<TreeNode>;
+}
+
+/** Summary statistics for a dependency tree analysis. */
+export interface TreeSummary {
+  readonly totalPackages: number;
+  readonly uniquePackages: number;
+  readonly maxDepth: number;
+  readonly abandonedCount: number;
+  readonly abandonedPaths: ReadonlyArray<ReadonlyArray<string>>;
+  readonly healthScore: number;
+  readonly grade: 'A' | 'B' | 'C' | 'D' | 'F';
+}
+
+/** Options for tree scanning. */
+export interface TreeScanOptions {
+  readonly packageJsonPath?: string;
+  readonly maxDepth?: number;
+  readonly registryUrl?: string;
+  readonly abandonmentThreshold?: AbandonmentThreshold;
+  readonly ignore?: ReadonlyArray<string>;
+  readonly concurrency?: number;
+}
+
 /** Configuration options for dependency scanning. */
 export interface ScanOptions {
   readonly dependencyFields?: ReadonlyArray<DependencyField>;

@@ -2,6 +2,7 @@
 import { scanDependencies } from './scanner';
 import { generateReport } from './reporter';
 import { calculateHealthScore } from './health';
+import { scanDependencyTree, summarizeTree, formatTree } from './tree-scanner';
 import { createAbandonmentThreshold } from './types';
 
 const ANSI = {
@@ -29,6 +30,8 @@ ${ANSI.bold}OPTIONS${ANSI.reset}
   --sort <field>       Sort by: name, age, status (default: age)
   --no-color           Disable colored output
   --score-only         Only output the health score
+  --tree               Analyze full dependency tree (transitive deps)
+  --tree-depth <n>     Max depth for tree analysis (default: 5)
   --help               Show this help message
 
 ${ANSI.bold}EXAMPLES${ANSI.reset}
@@ -37,6 +40,9 @@ ${ANSI.bold}EXAMPLES${ANSI.reset}
 
   ${ANSI.dim}# Scan with 1-year threshold, markdown output${ANSI.reset}
   npx @adametherzlab/dep-age --threshold 365 --format markdown
+
+  ${ANSI.dim}# Analyze full dependency tree${ANSI.reset}
+  npx @adametherzlab/dep-age --tree --tree-depth 3
 
   ${ANSI.dim}# Just the health score${ANSI.reset}
   npx @adametherzlab/dep-age --score-only
@@ -54,6 +60,7 @@ function parseArgs(argv: string[]): Record<string, string | boolean> {
     if (arg === '--no-color') { args.color = false; continue; }
     if (arg === '--abandoned-only') { args.abandonedOnly = true; continue; }
     if (arg === '--score-only') { args.scoreOnly = true; continue; }
+    if (arg === '--tree') { args.tree = true; continue; }
     if (arg.startsWith('--') && i + 1 < argv.length) {
       const key = arg.slice(2).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
       args[key] = argv[++i];
@@ -80,6 +87,39 @@ async function main(): Promise<void> {
     : undefined;
   const format = (args.format as 'text' | 'json' | 'markdown') ?? 'text';
   const useColor = args.color !== false && format === 'text';
+
+  // Tree mode
+  if (args.tree) {
+    const maxDepth = args.treeDepth ? parseInt(args.treeDepth as string, 10) : 5;
+    console.log(`${ANSI.dim}Scanning dependency tree (depth ${maxDepth})...${ANSI.reset}`);
+
+    const tree = await scanDependencyTree({
+      packageJsonPath,
+      maxDepth,
+      abandonmentThreshold: threshold,
+    });
+
+    const summary = summarizeTree(tree);
+    const gc = gradeColor(summary.grade);
+
+    if (format === 'json') {
+      console.log(JSON.stringify({ tree, summary }, null, 2));
+    } else {
+      console.log(`\n${ANSI.bold}Dependency Tree Health: ${gc}${summary.healthScore}/100 (${summary.grade})${ANSI.reset}`);
+      console.log(`${ANSI.dim}${summary.totalPackages} total | ${summary.uniquePackages} unique | depth ${summary.maxDepth} | ${summary.abandonedCount} abandoned${ANSI.reset}\n`);
+      console.log(formatTree(tree, { color: useColor }));
+
+      if (summary.abandonedCount > 0) {
+        console.log(`\n${ANSI.yellow}Abandoned dependency paths:${ANSI.reset}`);
+        for (const p of summary.abandonedPaths) {
+          console.log(`  ${ANSI.red}${p.join(' → ')}${ANSI.reset}`);
+        }
+      }
+    }
+
+    if (summary.abandonedCount > 0) process.exit(1);
+    return;
+  }
 
   console.log(`${ANSI.dim}Scanning dependencies...${ANSI.reset}`);
 

